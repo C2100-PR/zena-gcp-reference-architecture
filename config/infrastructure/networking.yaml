@@ -1,0 +1,105 @@
+networking:
+  vpc_networks:
+    zena_vpc:
+      name: zena-vpc
+      auto_create_subnetworks: false
+      routing_mode: GLOBAL
+      mtu: 1460
+      subnets:
+        - name: gke-subnet-west4
+          region: us-west4
+          ip_range: 172.16.0.0/20
+          secondary_ranges:
+            pods: 10.0.0.0/14
+            services: 10.4.0.0/19
+        - name: gke-subnet-west1
+          region: us-west1
+          ip_range: 172.16.16.0/20
+          secondary_ranges:
+            pods: 10.8.0.0/14
+            services: 10.12.0.0/19
+
+  nat_config:
+    west4_nat:
+      region: us-west4
+      network: zena-vpc
+      subnetwork: gke-subnet-west4
+      nat_ip_allocate_option: AUTO_ONLY
+      source_subnetwork_ip_ranges_to_nat: ALL_SUBNETWORKS_ALL_IP_RANGES
+      min_ports_per_vm: 2048
+      enable_endpoint_independent_mapping: true
+      enable_dynamic_port_allocation: true
+      log_config:
+        enable: true
+        filter: ERRORS_ONLY
+
+    west1_nat:
+      region: us-west1
+      network: zena-vpc
+      subnetwork: gke-subnet-west1
+      nat_ip_allocate_option: AUTO_ONLY
+      source_subnetwork_ip_ranges_to_nat: ALL_SUBNETWORKS_ALL_IP_RANGES
+      min_ports_per_vm: 2048
+
+  load_balancing:
+    global_https_lb:
+      name: zena-global-lb
+      ssl_certificates:
+        - name: zena-ssl-cert
+      backends:
+        - name: primary-backend
+          group: zena-primary-ig
+          balancing_mode: RATE
+          max_rate_per_instance: 100
+        - name: secondary-backend
+          group: zena-secondary-ig
+          balancing_mode: RATE
+          max_rate_per_instance: 80
+      health_check:
+        check_interval_sec: 5
+        timeout_sec: 5
+        healthy_threshold: 2
+        unhealthy_threshold: 2
+      ssl_policy:
+        min_tls_version: TLS_1_2
+        profile: MODERN
+
+    internal_load_balancer:
+      name: zena-internal-lb
+      region: us-west4
+      network: zena-vpc
+      scheme: INTERNAL
+      backends:
+        - name: ray-backend
+          group: ray-node-group
+          balancing_mode: CONNECTION
+          max_connections_per_instance: 1000
+      health_check:
+        check_interval_sec: 5
+        timeout_sec: 5
+        healthy_threshold: 2
+        unhealthy_threshold: 2
+
+  firewall_rules:
+    - name: allow-internal
+      network: zena-vpc
+      direction: INGRESS
+      priority: 1000
+      source_ranges: ["172.16.0.0/12"]
+      allow:
+        - protocol: all
+    - name: allow-health-check
+      network: zena-vpc
+      direction: INGRESS
+      priority: 1000
+      source_ranges: ["35.191.0.0/16", "130.211.0.0/22"]
+      allow:
+        - protocol: tcp
+    - name: allow-gke-control-plane
+      network: zena-vpc
+      direction: INGRESS
+      priority: 1000
+      source_ranges: ["172.16.0.0/28"]
+      allow:
+        - protocol: tcp
+          ports: ["443", "10250"]
