@@ -1,0 +1,45 @@
+memory_config:
+  client_interaction:
+    allocation: 32GB
+    priority: high
+    monitoring: active
+    scaling:
+      min: 24GB
+      max: 40GB
+      auto_scale: true
+    alerts:
+      threshold: 80%
+      notification: immediate
+
+  training:
+    allocation: 24GB
+    priority: medium
+    monitoring: active
+    scaling:
+      min: 16GB
+      max: 32GB
+      auto_scale: true
+    cleanup:
+      frequency: daily
+      threshold: 70%
+
+  data_lake:
+    allocation: 28GB
+    priority: medium
+    monitoring: active
+    partitions:
+      hot_data: 12GB
+      warm_data: 10GB
+      cold_data: 6GB
+    backup:
+      frequency: hourly
+      retention: 7d
+
+  system:
+    allocation: 12GB
+    priority: high
+    monitoring: active
+    reserved: true
+    critical_processes:
+      min_allocation: 8GB
+      failover: enabled
