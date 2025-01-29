@@ -1,0 +1,91 @@
+authentication:
+  workload_identity:
+    pool_id: projects/api-for-warp-drive/locations/global/workloadIdentityPools/zena-pool
+    providers:
+      - name: github-provider
+        issuer: https://token.actions.githubusercontent.com
+        allowed_audiences:
+          - https://github.com/C2100-PR
+      - name: okta-provider
+        issuer: https://coaching2100.okta.com
+        attribute_mapping:
+          google.subject: assertion.sub
+          google.groups: assertion.groups
+
+  oidc:
+    config:
+      issuer_url: https://coaching2100.okta.com
+      client_id: ${OKTA_CLIENT_ID}
+      groups_claim: groups
+      username_claim: preferred_username
+    providers:
+      - name: okta
+        client_secret: ${OKTA_CLIENT_SECRET}
+        scopes: ["openid", "email", "profile", "groups"]
+      - name: github
+        client_id: ${GITHUB_CLIENT_ID}
+        client_secret: ${GITHUB_CLIENT_SECRET}
+
+  service_accounts:
+    zena_primary:
+      name: zena-service@api-for-warp-drive.iam.gserviceaccount.com
+      roles:
+        - roles/container.developer
+        - roles/aiplatform.user
+        - roles/cloudbuild.builds.builder
+    claude_service:
+      name: claude-service@api-for-warp-drive.iam.gserviceaccount.com
+      roles:
+        - roles/aiplatform.admin
+        - roles/compute.instanceAdmin
+
+webhooks:
+  github:
+    - name: build-trigger
+      url: https://cloudbuild.googleapis.com/v1/projects/api-for-warp-drive/triggers/github
+      events: ["push", "pull_request"]
+      secret: ${GITHUB_WEBHOOK_SECRET}
+    - name: deploy-trigger
+      url: https://run.googleapis.com/v1/namespaces/api-for-warp-drive/triggers/deploy
+      events: ["release"]
+  
+  okta:
+    - name: user-provisioning
+      url: https://us-west4-api-for-warp-drive.cloudfunctions.net/okta-sync
+      events: ["user.lifecycle.create", "user.lifecycle.delete"]
+
+ssl_certificates:
+  primary_cert:
+    domains:
+      - zena.coaching2100.com
+      - "*.zena.coaching2100.com"
+    provider: google-managed
+    type: MANAGED
+    
+  internal_cert:
+    domains:
+      - internal.zena.coaching2100.com
+    provider: self-managed
+    private_key_secret: zena-internal-key
+    certificate_secret: zena-internal-cert
+
+dns_config:
+  primary_zone:
+    name: zena-zone
+    dns_name: zena.coaching2100.com
+    records:
+      - name: "@"
+        type: A
+        ttl: 300
+        rrdatas:
+          - ${GLOBAL_LB_IP}
+      - name: "api"
+        type: A
+        ttl: 300
+        rrdatas:
+          - ${API_LB_IP}
+      - name: "*"
+        type: A
+        ttl: 300
+        rrdatas:
+          - ${GLOBAL_LB_IP}
