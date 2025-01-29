@@ -1,0 +1,71 @@
+notebook_config:
+  claude_v3_notebook_1:
+    region: us-west4
+    machine_type: n1-standard-16
+    gpu: 
+      type: NVIDIA_TESLA_T4
+      count: 1
+    memory: 96GB
+    workloads:
+      primary:
+        - content_automation
+        - bid_processing
+      secondary:
+        - document_analysis
+        - pattern_recognition
+    scaling:
+      auto_scale: true
+      min_nodes: 1
+      max_nodes: 3
+    monitoring:
+      metrics:
+        - gpu_utilization
+        - memory_usage
+        - processing_time
+      alerts:
+        threshold: 85%
+        notification: immediate
+
+  claude_v3_notebook_2:
+    region: us-west4
+    machine_type: n1-standard-16
+    gpu:
+      type: NVIDIA_TESLA_T4
+      count: 1
+    memory: 96GB
+    workloads:
+      primary:
+        - analytics
+        - training
+      secondary:
+        - model_optimization
+        - performance_analysis
+    scaling:
+      auto_scale: true
+      min_nodes: 1
+      max_nodes: 3
+    monitoring:
+      metrics:
+        - gpu_utilization
+        - memory_usage
+        - training_performance
+      alerts:
+        threshold: 85%
+        notification: immediate
+
+  shared_resources:
+    storage:
+      type: ssd
+      size: 500GB
+    networking:
+      vpc: zena-vpc
+      subnet: notebook-subnet
+    security:
+      encryption: 16bit
+      access_control: role_based
+    backup:
+      frequency: daily
+      retention: 7d
+    maintenance:
+      window: "Sunday 02:00-06:00 UTC"
+      auto_upgrade: true
