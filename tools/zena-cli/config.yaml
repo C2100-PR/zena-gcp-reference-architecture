@@ -1,0 +1,133 @@
+cli_configuration:
+  name: zena-cli
+  version: 1.0.0
+  default_environment: production
+
+commands:
+  infrastructure:
+    - name: deploy
+      subcommands:
+        - name: all
+          description: "Deploy all infrastructure components"
+        - name: gke
+          description: "Deploy GKE clusters"
+        - name: ray
+          description: "Deploy Ray clusters"
+        - name: networking
+          description: "Configure networking components"
+    
+    - name: status
+      subcommands:
+        - name: check
+          description: "Check infrastructure status"
+        - name: health
+          description: "Run health checks"
+    
+    - name: rotate
+      subcommands:
+        - name: secrets
+          description: "Rotate service secrets"
+        - name: certificates
+          description: "Rotate SSL certificates"
+
+  ai_management:
+    - name: model
+      subcommands:
+        - name: deploy
+          description: "Deploy AI models"
+        - name: status
+          description: "Check model status"
+        - name: logs
+          description: "View model logs"
+    
+    - name: notebook
+      subcommands:
+        - name: create
+          description: "Create notebook instance"
+        - name: list
+          description: "List notebook instances"
+        - name: delete
+          description: "Delete notebook instance"
+
+  monitoring:
+    - name: metrics
+      subcommands:
+        - name: view
+          description: "View system metrics"
+        - name: export
+          description: "Export metrics data"
+    
+    - name: alerts
+      subcommands:
+        - name: list
+          description: "List active alerts"
+        - name: acknowledge
+          description: "Acknowledge alerts"
+
+shell_integration:
+  completion:
+    - bash
+    - zsh
+    - fish
+  
+  aliases:
+    - name: zd
+      command: "zena-cli deploy"
+    - name: zs
+      command: "zena-cli status"
+    - name: zm
+      command: "zena-cli model"
+
+environment_management:
+  environments:
+    - name: production
+      project: api-for-warp-drive
+      region: us-west4
+    - name: staging
+      project: api-for-warp-drive-stage
+      region: us-west4
+    - name: development
+      project: api-for-warp-drive-dev
+      region: us-west4
+
+authentication:
+  methods:
+    - type: service_account
+      default: true
+    - type: user_account
+      require_mfa: true
+  
+  token_cache:
+    enabled: true
+    location: "~/.zena/tokens"
+    max_age: 3600
+
+output_formats:
+  - json
+  - yaml
+  - table
+  - wide
+
+logging:
+  levels:
+    - debug
+    - info
+    - warning
+    - error
+  
+  output:
+    file: "~/.zena/logs/cli.log"
+    max_size: "100M"
+    max_files: 5
+
+plugins:
+  directory: "~/.zena/plugins"
+  autoload: true
+  allowed_sources:
+    - "github.com/C2100-PR"
+    - "internal.coaching2100.com"
+
+scripts:
+  directory: "~/.zena/scripts"
+  autocomplete: true
+  validation: true
